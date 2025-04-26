@@ -1,11 +1,12 @@
 package cn.jiujiu.emailservice.controller;
 
+import cn.jiujiu.emailservice.model.ApiResponse;
 import cn.jiujiu.emailservice.model.EmailRequest;
 import cn.jiujiu.emailservice.model.VerificationCodeEmailRequest;
 import cn.jiujiu.emailservice.service.EmailService;
+import cn.jiujiu.emailservice.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,11 +33,11 @@ public class EmailController {
 
 
     @PostMapping("/send")
-     public Mono<ResponseEntity<String>> sendEmail(@RequestBody Mono<EmailRequest> requestMono) {
+     public Mono<ResponseEntity<ApiResponse>> sendEmail(@RequestBody Mono<EmailRequest> requestMono) {
          return requestMono
             .flatMap(request ->{
                 if(request.getTo()==null || request.getTo().isEmpty()){
-                    return Mono.just(ResponseEntity.badRequest().body("收件人不能为空"));
+                    return ResponseUtils.badRequest("收件人不能为空");
                 }
                 if(request.getContent()==null || request.getContent().isEmpty()){
                     request.setContent("");
@@ -46,28 +47,28 @@ public class EmailController {
                 }
 
                 return emailService.sendSimpleEmail(request.getTo(), request.getSubject(), request.getContent())
-                    .map(success -> {
+                    .flatMap(success -> {
                         if (success) {
-                            return ResponseEntity.ok("邮件发送成功");
+                            return ResponseUtils.ok("邮件发送成功");
                         } else {
-                            return ResponseEntity.status(500).body("邮件发送失败");
+                            return ResponseUtils.internalServerError("邮件发送失败");
                         }
                     });
             })
-         .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid request format: " + e.getMessage())));
+         .onErrorResume(ResponseUtils::internalServerError);
 
      }
 
      @PostMapping("/sendHtml")
-     public Mono<ResponseEntity<String>> sendHtmlEmail(@RequestBody Mono<VerificationCodeEmailRequest> requestMono) {
+     public Mono<ResponseEntity<ApiResponse>> sendHtmlEmail(@RequestBody Mono<VerificationCodeEmailRequest> requestMono) {
          return requestMono.flatMap(request->{
              if(request.getTo()==null||request.getTo().isEmpty())
              {
-                 return Mono.just(ResponseEntity.badRequest().body("收件人不能为空"));
+                 return ResponseUtils.badRequest("收件人不能为空");
              }
              if(request.getVerificationCode()==null||request.getVerificationCode().isEmpty())
              {
-                 return Mono.just(ResponseEntity.badRequest().body("验证码不能为空"));
+                 return ResponseUtils.badRequest("验证码不能为空");
              }
              Map<String,Object>templateDate=new HashMap<>();
 
@@ -80,16 +81,14 @@ public class EmailController {
                      request.getSubject(),
                      templateName,
                      templateDate
-             ).map(success -> {
+             ).flatMap(success -> {
                  if (success) {
-                     return ResponseEntity.ok("邮件发送成功");
+                     return ResponseUtils.ok("邮件发送成功");
                  } else {
-                     return ResponseEntity.status(500).body("邮件发送失败");
+                     return ResponseUtils.internalServerError("邮件发送失败");
                  }
              });
          })
-         .onErrorResume(e->
-                 Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid request format: " + e.getMessage()))
-         );
+         .onErrorResume(ResponseUtils::internalServerError);
      }
 }
