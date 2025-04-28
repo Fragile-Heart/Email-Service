@@ -1,0 +1,7 @@
+package cn.jiujiu.emailservice.exception;
+
+public class EmailServiceException extends RuntimeException {
+    public EmailServiceException(String message) {
+        super(message);
+    }
+}

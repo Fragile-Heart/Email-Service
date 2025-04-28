@@ -9,7 +9,7 @@ public class ApiResponse implements Serializable {
 
 
     private int code;
-    private String message; // 响应消息 (例如: "Success", "Bad Request")
+    private String message;
 
     // 私有构造函数，强制使用静态工厂方法创建实例
     private ApiResponse(int code, String message) {
