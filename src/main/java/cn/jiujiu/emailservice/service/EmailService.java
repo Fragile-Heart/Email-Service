@@ -1,6 +1,8 @@
 package cn.jiujiu.emailservice.service;
 
 
+import cn.jiujiu.emailservice.exception.EmailSendFailureException;
+import cn.jiujiu.emailservice.exception.EmailServiceException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import org.thymeleaf.exceptions.TemplateProcessingException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -48,17 +51,17 @@ public class EmailService {
                 helper.setText(text, false); // false 表示纯文本
 
                 mailSender.send(message);
-
+                log.info("email sent successfully to: {}",  to);
                 return true;
             }catch (MessagingException e) {
                 log.error("Error creating email message to {}: {}", to, e.getMessage(), e);
-                throw new RuntimeException("Error creating email message", e); // Propagate as unchecked
+                throw new EmailSendFailureException("Error creating email message", e); // Propagate as unchecked
             } catch (MailException e) {
                 log.error("Error sending email to {}: {}", to, e.getMessage(), e);
-                throw new RuntimeException("Error sending email", e); // Propagate as unchecked
+                throw new EmailSendFailureException("Error sending email", e); // Propagate as unchecked
             } catch (Exception e) {
                 log.error("An unexpected error occurred while sending email to {}: {}", to, e.getMessage(), e);
-                throw new RuntimeException("Unexpected error during email sending", e); // Propagate as unchecked
+                throw new EmailServiceException("An unexpected service error occurred", e); // Propagate as unchecked
             }
         })
         .subscribeOn(Schedulers.boundedElastic())
@@ -99,22 +102,24 @@ public class EmailService {
                 helper.setText(htmlContent, true);
                 mailSender.send(message);
 
-                log.info("成功发送模板邮件至：{}", to);
+                log.info("Templated email '{}' sent successfully to: {}", templateName, to);
                 return true;
             } catch (MessagingException e) {
-                log.error("创建邮件消息时出错，收件人：{}: {}", to, e.getMessage(), e);
-                throw new RuntimeException("创建邮件消息出错", e);
+                log.error("Error creating MimeMessage for templated email '{}' to {}: {}", templateName, to, e.getMessage(), e);
+                throw new EmailSendFailureException("Failed to create MimeMessage for email to " + to, e);
             } catch (MailException e) {
-                log.error("发送邮件时出错，收件人：{}: {}", to, e.getMessage(), e);
-                throw new RuntimeException("发送邮件出错", e);
+                log.error("Error sending templated email '{}' to {}: {}", templateName, to, e.getMessage(), e);
+                throw new EmailSendFailureException("Failed to send email to " + to, e);
+            } catch (TemplateProcessingException e) {
+                log.error("Error processing template '{}' for email to {}: {}", templateName, to, e.getMessage(), e);
+                throw new cn.jiujiu.emailservice.exception.TemplateProcessingException("Failed to process template '" + templateName + "'", e);
             } catch (Exception e) {
-                log.error("发送邮件过程中发生意外错误，收件人：{}: {}", to, e.getMessage(), e);
-                throw new RuntimeException("发送邮件过程中发生意外错误", e);
+                log.error("An unexpected error occurred while sending templated email '{}' to {}: {}", templateName, to, e.getMessage(), e);
+                throw new EmailServiceException("An unexpected service error occurred", e);
             }
         }).subscribeOn(Schedulers.boundedElastic())
         .onErrorResume(e -> {
-            log.error("邮件发送失败: {}", e.getMessage());
-            return Mono.just(false);
+            throw new EmailSendFailureException(e.getMessage(), e);
         });
     }
 }

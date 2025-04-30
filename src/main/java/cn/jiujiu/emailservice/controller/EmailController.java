@@ -37,7 +37,7 @@ public class EmailController {
          return requestMono
             .flatMap(request ->{
                 if(request.getTo()==null || request.getTo().isEmpty()){
-                    return ResponseUtils.badRequest("收件人不能为空");
+                    return ResponseUtils.badRequest("Recipient cannot be empt");
                 }
                 if(request.getContent()==null || request.getContent().isEmpty()){
                     request.setContent("");
@@ -49,9 +49,9 @@ public class EmailController {
                 return emailService.sendSimpleEmail(request.getTo(), request.getSubject(), request.getContent())
                     .flatMap(success -> {
                         if (success) {
-                            return ResponseUtils.ok("邮件发送成功");
+                            return ResponseUtils.ok("Email sent successfully");
                         } else {
-                            return ResponseUtils.internalServerError("邮件发送失败");
+                            return ResponseUtils.internalServerError("Failed to send email");
                         }
                     });
             })
@@ -64,11 +64,11 @@ public class EmailController {
          return requestMono.flatMap(request->{
              if(request.getTo()==null||request.getTo().isEmpty())
              {
-                 return ResponseUtils.badRequest("收件人不能为空");
+                 return ResponseUtils.badRequest("Recipient cannot be empty");
              }
              if(request.getVerificationCode()==null||request.getVerificationCode().isEmpty())
              {
-                 return ResponseUtils.badRequest("验证码不能为空");
+                 return ResponseUtils.badRequest("Verification code cannot be empty");
              }
              Map<String,Object>templateDate=new HashMap<>();
 
@@ -83,9 +83,9 @@ public class EmailController {
                      templateDate
              ).flatMap(success -> {
                  if (success) {
-                     return ResponseUtils.ok("邮件发送成功");
+                     return ResponseUtils.ok("Email sent successfully");
                  } else {
-                     return ResponseUtils.internalServerError("邮件发送失败");
+                     return ResponseUtils.internalServerError("Failed to send email");
                  }
              });
          })

@@ -150,6 +150,7 @@ java -jar target/<你的jar文件名>.jar
     *   `app.mail.template-name`: 指定 `/api/email/sendHtml` 接口使用的 Thymeleaf 模板文件名（不含 `.html` 后缀）。默认使用 `verification_code` 模板。如果您使用自定义模板，请将 HTML 文件放在 `src/main/resources/templates` 目录下，并将此配置修改为您的文件名。
 
 
+
 ## 邮件模板
 
 邮件模板文件存放在 `src/main/resources/templates/` 目录下。主要使用的是 `verification_code.html` 文件，它是一个用于发送各种验证码的通用 HTML 模板。

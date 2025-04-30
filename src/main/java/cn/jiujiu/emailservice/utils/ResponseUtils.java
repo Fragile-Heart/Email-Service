@@ -1,10 +1,11 @@
 package cn.jiujiu.emailservice.utils;
 
 import cn.jiujiu.emailservice.model.ApiResponse;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 public class ResponseUtils {
 
     /**
@@ -42,9 +43,9 @@ public class ResponseUtils {
      */
     public static Mono<ResponseEntity<ApiResponse>> internalServerError(Throwable throwable) {
         // 可以在这里根据 throwable 类型生成更详细或不同的错误消息
-        String errorMessage = "An unexpected error occurred: " + throwable.getMessage();
-        // 记录更详细的错误日志
-        LoggerFactory.getLogger(ResponseUtils.class).error("Internal Server Error", throwable);
-        return internalServerError(errorMessage);
+
+        log.error(throwable.getMessage());
+
+        return internalServerError(throwable.getMessage());
     }
 }
